@@ -88,7 +88,7 @@ summary{cursor:pointer;color:var(--gold2);font-weight:600}
 
 <div id="menu" class="oculto">
   <div class="caixa">
-    <div class="topo"><h1>Ilha do Reino</h1><span class="versao">VR · v0.1.1</span></div>
+    <div class="topo"><h1>Ilha do Reino</h1><span class="versao">VR · v0.1.2</span></div>
     <p class="sub">Um herói do Reino Pequeno numa ilha de blocos. Veja a ilha como uma maquete na sua frente ou entre nela em primeira pessoa. Corra, pule de bloco em bloco e assuste as ovelhas.</p>
     <p class="rotulo">Escolha o herói</p>
     <div class="classes" id="classes"></div>
@@ -705,22 +705,25 @@ const eixoTravado = new Map();
 function lerControles() {
   const s = renderer.xr.getSession(); const out = { mx: 0, mz: 0, giro: 0, sobe: 0, zoom: false };
   if (!s) return out;
+  diag.esq = diag.dir = false; diag.maos = 0;
   for (const src of s.inputSources) {
-    const gp = src.gamepad; if (!gp) continue;
+    const gp = src.gamepad; if (!gp) { if (src.hand) diag.maos++; continue; }
+    if (src.handedness === 'left') diag.esq = true; else diag.dir = true;
     const ant = anterior.get(src) || [];
-    const apertou = i => gp.buttons[i]?.pressed && !ant[i];
+    const NOMES = src.handedness === 'left' ? ['gatilho E', 'grip E', '', 'analógico E', 'X', 'Y'] : ['gatilho D', 'grip D', '', 'analógico D', 'A', 'B'];
+    const apertou = i => { const ok = gp.buttons[i]?.pressed && !ant[i]; if (ok && NOMES[i]) diag.ultimo = NOMES[i]; return ok; };
+    for (let i = 0; i < 6; i++) if (i !== 3 && i !== 4 && i !== 5) apertou(i);
     const ax = gp.axes[2] || 0, ay = gp.axes[3] || 0;
+    if (Math.hypot(ax, ay) > .5) diag.ultimo = src.handedness === 'left' ? 'analógico E' : 'analógico D';
     if (apertou(3)) alternarCamera();                                      // clique no analógico
     if (src.handedness === 'left') {
       [out.mx, out.mz] = zonaMorta(ax, ay);
       if (apertou(4)) estado === 'escolha' ? confirmar() : pular();        // X
       if (apertou(5) && estado === 'escolha') novaIlha();                  // Y
-      if (apertou(0) && estado === 'jogo') atacar();
     } else {
       out.giro = ax; out.sobe = ay; out.zoom = !!gp.buttons[1]?.pressed;
       if (apertou(4)) estado === 'escolha' ? confirmar() : pular();        // A
       if (apertou(5) && estado === 'jogo') irParaEscolha();                // B
-      if (apertou(0)) estado === 'jogo' ? atacar() : confirmar();
     }
     // 1ª pessoa: o analógico direito vira 30° por empurrão (giro suave dá enjoo)
     if (fp() && src.handedness !== 'left') {
@@ -744,6 +747,32 @@ function vibrar(forca = .4, ms = 40) {
   for (const src of s.inputSources) src.gamepad?.hapticActuators?.[0]?.pulse?.(forca, ms);
 }
 
+/* painel no pulso esquerdo: herói, câmera e se o jogo está enxergando os controles */
+const diag = { esq: false, dir: false, maos: 0, ultimo: '—', erro: '' };
+const pulso = new Rotulo(560, 230, .17);
+pulso.mesh.position.set(0, .055, .03); pulso.mesh.rotation.x = -.9; pulso.mesh.visible = false;
+let pulsoTexto = '';
+function atualizarPulso() {
+  if (!noVR) { pulso.mesh.visible = false; return; }
+  pulso.mesh.visible = !!pulso.mesh.parent && pulso.mesh.parent !== cena;
+  const c = CLASSES[classeIdx];
+  const linhas = [
+    `${c.nome} · ${estado === 'jogo' ? (modo === 'primeira' ? '1ª pessoa' : 'maquete') : 'escolhendo'}`,
+    diag.esq || diag.dir ? `Controles: esq ${diag.esq ? 'ok' : '—'} · dir ${diag.dir ? 'ok' : '—'}` : diag.maos ? 'Pegue os controles (mãos não funcionam)' : 'Nenhum controle encontrado',
+    `Último botão: ${diag.ultimo}`,
+    diag.erro ? `Erro: ${diag.erro}` : 'v0.1.2',
+  ];
+  const t = linhas.join('|'); if (t === pulsoTexto) return; pulsoTexto = t;
+  pulso.desenhar((g, w, h) => {
+    painel(g, w, h, 20); g.textAlign = 'left';
+    linhas.forEach((l, i) => { g.fillStyle = i === 0 ? '#ffd84a' : i === 3 && diag.erro ? '#ff8a7a' : '#fff6dd';
+      g.font = `${i === 0 ? 700 : 500} ${i === 0 ? 36 : 28}px ${FONTE}`; g.fillText(l.slice(0, 34), 26, 54 + i * 48); });
+  });
+}
+addEventListener('error', e => { diag.erro = String(e.message || e).slice(0, 60); mostrarErro(diag.erro); });
+addEventListener('unhandledrejection', e => { diag.erro = String(e.reason?.message || e.reason).slice(0, 60); mostrarErro(diag.erro); });
+function mostrarErro(t) { const a = document.getElementById('avisoVR'); if (a) a.textContent = 'Erro no jogo: ' + t; }
+
 /* mãos simples para ver onde estão os controles */
 function montarMaos() {
   for (let i = 0; i < 2; i++) {
@@ -751,6 +780,7 @@ function montarMaos() {
     const mao = new THREE.Mesh(new THREE.BoxGeometry(.035, .03, .09), new THREE.MeshBasicMaterial({ color: '#a8743f' }));
     const ponta = new THREE.Mesh(new THREE.BoxGeometry(.036, .012, .02), new THREE.MeshBasicMaterial({ color: '#ffd84a' }));
     ponta.position.set(0, .02, -.035); mao.add(ponta); grip.add(mao); rig.add(grip);
+    grip.addEventListener('connected', e => { if (e.data?.handedness === 'left') grip.add(pulso.mesh); });
   }
 }
 
@@ -942,6 +972,7 @@ function quadro() {
   moverOvelhas(dt);
   atualizarFiguras(dt);
   atualizarFade(dt);
+  atualizarPulso();
   renderer.render(cena, camera);
 }
 
@@ -990,10 +1021,14 @@ async function prepararVR() {
     try {
       const s = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] });
       s.addEventListener('end', () => { noVR = false; abrirMenu(); });
+      s.addEventListener('selectstart', e => {          // gatilho (ou pinça, com as mãos)
+        diag.ultimo = e.inputSource?.handedness === 'left' ? 'gatilho E' : 'gatilho D';
+        if (estado === 'jogo') atacar(); else confirmar();
+      });
       await renderer.xr.setSession(s);
       noVR = true; fecharMenu(); som('ok');
-      if (estado === 'jogo') { desenharDica('Andar  ·  A: pular  ·  Gatilho: atacar  ·  B: herói  ·  Clique analóg.: câmera'); mostrarAvisoCam(); }
-      else irParaEscolha();
+      if (estado !== 'jogo') confirmarJa();             // já entra jogando com o herói escolhido no menu
+      desenharDica('Andar  ·  A: pular  ·  Gatilho: atacar  ·  B: herói  ·  Clique analóg.: câmera'); mostrarAvisoCam();
     } catch (e) { aviso.textContent = 'Não consegui abrir o VR: ' + (e.message || e); }
   });
 }
