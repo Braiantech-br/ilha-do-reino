@@ -694,6 +694,12 @@ canvas.addEventListener('pointerup', () => { if (arrastando && moveu < 6 && !men
 canvas.addEventListener('wheel', e => { if (fp()) return; orbita.raio = Math.min(3, Math.max(.45, orbita.raio * (1 + e.deltaY * .001))); e.preventDefault(); }, { passive: false });
 
 /* controles do Quest */
+// analógico gasto não volta exatamente ao centro: abaixo de 25% é "parado", acima disso a escala recomeça do zero
+const ZONA = .25;
+function zonaMorta(x, y) {
+  const m = Math.hypot(x, y); if (m < ZONA) return [0, 0];
+  const k = Math.min(1, (m - ZONA) / (1 - ZONA)) / m; return [x * k, y * k];
+}
 const anterior = new Map();   // fonte -> botões do quadro anterior
 const eixoTravado = new Map();
 function lerControles() {
@@ -706,7 +712,7 @@ function lerControles() {
     const ax = gp.axes[2] || 0, ay = gp.axes[3] || 0;
     if (apertou(3)) alternarCamera();                                      // clique no analógico
     if (src.handedness === 'left') {
-      out.mx = ax; out.mz = ay;
+      [out.mx, out.mz] = zonaMorta(ax, ay);
       if (apertou(4)) estado === 'escolha' ? confirmar() : pular();        // X
       if (apertou(5) && estado === 'escolha') novaIlha();                  // Y
       if (apertou(0) && estado === 'jogo') atacar();
@@ -773,7 +779,7 @@ function moverHeroi(dt, mx, mz) {
   let vx = rx * mx + fx * -mz, vz = rz * mx + fz * -mz;
   const m = Math.hypot(vx, vz); if (m > 1) { vx /= m; vz /= m; }
   const vel = velocidade(c) * (heroi.atacando > 0 ? .35 : 1) * (fp() && renderer.xr.isPresenting ? .7 : 1);
-  const andando = m > .15;
+  const andando = m > .05;
   if (andando) {
     const nx = heroi.x + vx * vel * dt; if (!colide(nx, heroi.z, heroi.y, heroi.raio)) heroi.x = nx;
     const nz = heroi.z + vz * vel * dt; if (!colide(heroi.x, nz, heroi.y, heroi.raio)) heroi.z = nz;
@@ -873,7 +879,7 @@ function atualizarFiguras(dt) {
 
 function posicionarMaquete(dt, ctl) {
   if (ctl) {
-    const zona = v => Math.abs(v) < .15 ? 0 : v;
+    const zona = v => Math.abs(v) < ZONA ? 0 : v;
     ajuste.giro -= zona(ctl.giro) * 1.6 * dt;
     if (ctl.zoom) ajuste.zoom = Math.min(2.2, Math.max(.45, ajuste.zoom * (1 - zona(ctl.sobe) * 1.2 * dt)));
     else ajuste.altura = Math.min(1.6, Math.max(.15, ajuste.altura - zona(ctl.sobe) * .5 * dt));
