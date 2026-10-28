@@ -1,0 +1,1011 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ilha do Reino</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#2b2232; --ink2:#3a2e44; --wood:#4a2d17; --wood2:#a8743f; --paper:#fff6dd;
+  --gold:#ffd84a; --gold2:#e3b23c; --water:#47aba9; --red:#d6453a; --grass:#9bbf3f;
+  --panel:rgba(43,34,50,.92); --line:rgba(255,246,221,.14);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#16202a;color:var(--paper);font-family:'Pixelify Sans',ui-monospace,monospace;overflow:hidden}
+canvas#cena{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;
+  background:radial-gradient(ellipse at 50% 30%,rgba(22,32,42,.35),rgba(22,32,42,.85));overflow:auto;z-index:5}
+#menu.oculto{display:none}
+.caixa{width:min(860px,100%);background:var(--panel);border:3px solid var(--wood2);border-radius:14px;
+  box-shadow:0 0 0 3px var(--wood),0 18px 60px rgba(0,0,0,.55);padding:22px 22px 18px}
+.topo{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+h1{font-family:'Jersey 10',monospace;font-weight:400;font-size:clamp(46px,8vw,72px);line-height:.85;margin:0;color:var(--gold);
+  text-shadow:0 3px 0 var(--wood),0 0 24px rgba(255,216,74,.25);letter-spacing:1px}
+.versao{font-size:13px;color:var(--ink);background:var(--gold);border-radius:6px;padding:3px 8px;margin-bottom:8px;font-weight:700}
+.sub{margin:8px 0 18px;color:rgba(255,246,221,.75);font-size:15px;line-height:1.4}
+.rotulo{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--gold2);margin:0 0 8px}
+.classes{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.carta{all:unset;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px 12px;border-radius:10px;
+  background:rgba(255,246,221,.05);border:2px solid var(--line);transition:transform .12s,border-color .12s,background .12s}
+.carta:hover{transform:translateY(-2px);border-color:rgba(255,216,74,.5)}
+.carta:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.carta.sel{border-color:var(--gold);background:rgba(255,216,74,.12);box-shadow:0 0 18px rgba(255,216,74,.2) inset}
+.retrato{width:100%;height:92px;position:relative;overflow:hidden}
+.sprite{position:absolute;left:50%;bottom:0;image-rendering:pixelated;background-repeat:no-repeat;animation:quadros var(--dur) steps(var(--n)) infinite}
+@keyframes quadros{to{background-position-x:var(--fim)}}
+.nome{font-weight:700;font-size:16px}
+.papel{font-size:12px;color:rgba(255,246,221,.6);text-align:center;min-height:2.4em;line-height:1.2}
+.barras{width:100%;display:grid;gap:4px;margin-top:2px}
+.barra{display:grid;grid-template-columns:22px 1fr;align-items:center;gap:5px;font-size:11px;color:rgba(255,246,221,.7)}
+.barra i{display:block;height:6px;border-radius:3px;background:rgba(255,246,221,.12);overflow:hidden}
+.barra i b{display:block;height:100%;border-radius:3px}
+.acoes{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{all:unset;cursor:pointer;font-family:inherit;font-weight:700;font-size:17px;padding:12px 20px;border-radius:9px;text-align:center;
+  background:rgba(255,246,221,.08);border:2px solid var(--line);color:var(--paper);transition:transform .1s,background .12s}
+.btn:hover{transform:translateY(-1px);background:rgba(255,246,221,.14)}
+.btn:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.btn.vr{background:var(--gold);color:var(--ink);border-color:var(--gold);box-shadow:0 4px 0 var(--gold2)}
+.btn.vr:hover{background:#ffe27a}
+.btn[disabled]{opacity:.45;cursor:not-allowed;transform:none}
+.aviso{font-size:13px;color:rgba(255,246,221,.65);flex-basis:100%;margin-top:2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.opc{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-radius:10px;
+  background:rgba(255,246,221,.05);border:2px solid var(--line);transition:border-color .12s,background .12s}
+.opc b{font-size:16px}
+.opc small{font-size:12px;color:rgba(255,246,221,.6)}
+.opc:hover{border-color:rgba(255,216,74,.5)}
+.opc:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.opc.sel{border-color:var(--gold);background:rgba(255,216,74,.12)}
+.opc.sel b{color:var(--gold)}
+details{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+summary{cursor:pointer;color:var(--gold2);font-weight:600}
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:10px;font-size:14px}
+.ctrl h3{margin:0 0 6px;font-size:14px;color:var(--gold)}
+.ctrl dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+.ctrl dt{color:var(--paper);font-weight:700;white-space:nowrap}
+.ctrl dd{margin:0;color:rgba(255,246,221,.7)}
+#hud{position:fixed;left:12px;bottom:12px;z-index:4;font-size:13px;background:var(--panel);border:2px solid var(--wood2);border-radius:9px;
+  padding:8px 12px;color:rgba(255,246,221,.85);max-width:calc(100% - 24px);line-height:1.5}
+#hud.oculto{display:none}
+#hud b{color:var(--gold)}
+#carregando{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--gold);z-index:9;background:#16202a}
+@media (max-width:720px){
+  .classes{grid-template-columns:repeat(3,1fr)}
+  .seg{grid-template-columns:1fr}
+  .ctrl{grid-template-columns:1fr}
+  .caixa{padding:16px}
+}
+@media (prefers-reduced-motion:reduce){.sprite{animation:none}}
+</style>
+<script type="importmap">{"imports":{"three":"__THREE__"}}</script>
+</head>
+<body>
+<div id="carregando">Carregando a ilha…</div>
+<canvas id="cena"></canvas>
+
+<div id="menu" class="oculto">
+  <div class="caixa">
+    <div class="topo"><h1>Ilha do Reino</h1><span class="versao">VR · v0.1.1</span></div>
+    <p class="sub">Um herói do Reino Pequeno numa ilha de blocos. Veja a ilha como uma maquete na sua frente ou entre nela em primeira pessoa. Corra, pule de bloco em bloco e assuste as ovelhas.</p>
+    <p class="rotulo">Escolha o herói</p>
+    <div class="classes" id="classes"></div>
+    <p class="rotulo">Câmera</p>
+    <div class="seg" id="cameras" role="group" aria-label="Câmera">
+      <button class="opc" type="button" data-modo="maquete"><b>Maquete</b><small>a ilha na sua frente, como uma mesa de jogo</small></button>
+      <button class="opc" type="button" data-modo="primeira"><b>Primeira pessoa</b><small>você é o herói, com blocos de 1 metro</small></button>
+    </div>
+    <div class="acoes">
+      <button class="btn vr" id="btnVR" disabled>Procurando VR…</button>
+      <button class="btn" id="btnPC">Jogar no computador</button>
+      <button class="btn" id="btnIlha">Sortear outra ilha</button>
+      <span class="aviso" id="avisoVR"></span>
+    </div>
+    <details>
+      <summary>Controles</summary>
+      <div class="ctrl">
+        <div><h3>Meta Quest</h3><dl>
+          <dt>Analógico esq.</dt><dd>andar com o herói</dd>
+          <dt>A ou X</dt><dd>pular · confirmar</dd>
+          <dt>Gatilho</dt><dd>atacar</dd>
+          <dt>B</dt><dd>voltar à escolha de herói</dd>
+          <dt>Y</dt><dd>sortear outra ilha (na escolha)</dd>
+          <dt>Clique no analóg.</dt><dd>trocar câmera (maquete / 1ª pessoa)</dd>
+          <dt>Analógico dir.</dt><dd>maquete: girar e subir/descer · 1ª pessoa: virar 30°</dd>
+          <dt>Grip dir. + analóg.</dt><dd>maquete: aproximar / afastar</dd>
+        </dl></div>
+        <div><h3>Computador</h3><dl>
+          <dt>W A S D / setas</dt><dd>andar · escolher herói</dd>
+          <dt>Espaço</dt><dd>pular · confirmar</dd>
+          <dt>J ou clique</dt><dd>atacar</dd>
+          <dt>Q / E</dt><dd>girar a ilha</dd>
+          <dt>Arrastar · roda</dt><dd>olhar em volta · zoom</dd>
+          <dt>V</dt><dd>trocar câmera (maquete / 1ª pessoa)</dd>
+          <dt>B</dt><dd>trocar de herói</dd>
+          <dt>Esc</dt><dd>abrir este menu</dd>
+        </dl></div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="hud" class="oculto"></div>
+
+<script>window.__A=__ASSETS__;window.__M=__META__;</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ---------------------------------------------------------------- dados */
+const A = window.__A, M = window.__M;
+const N = 32;                 // ilha N x N blocos
+const BLOCO = 0.05;           // 1 bloco = 5 cm no mundo
+const AGUA = 0.55;            // nível da água (em blocos)
+const G = 30;                 // gravidade (blocos/s²)
+const PULO = Math.sqrt(2 * G * 1.3);
+
+const CLASSES = [
+  { id:'warrior', nome:'Guerreiro', papel:'Forte e resistente',   idle:'b_warrior_idle', run:'b_warrior_run', atk:'b_warrior_atk', vida:5, forca:5, vel:3, cor:'#d6453a' },
+  { id:'archer',  nome:'Arqueiro',  papel:'Ataca de longe',        idle:'b_archer_idle',  run:'b_archer_run',  atk:'b_archer_atk',  vida:2, forca:4, vel:4, cor:'#9bbf3f' },
+  { id:'lancer',  nome:'Lanceiro',  papel:'Alcance com a lança',   idle:'b_lancer_idle',  run:'b_lancer_run',  atk:'b_lancer_atk',  vida:4, forca:4, vel:3, cor:'#47aba9' },
+  { id:'monk',    nome:'Monge',     papel:'Cura e converte',       idle:'b_monk_idle',    run:'b_monk_run',    atk:'b_monk_atk',    vida:2, forca:2, vel:3, cor:'#ffd84a' },
+  { id:'pawn',    nome:'Peão',      papel:'Coleta e constrói',     idle:'b_pawn_idle',    run:'b_pawn_run',    atk:'b_pawn_axe',    vida:2, forca:3, vel:5, cor:'#a8743f' },
+];
+const velocidade = c => 2.6 + c.vel * 0.22;   // blocos por segundo
+
+/* ------------------------------------------------------- estado salvo */
+const salvo = (() => { try { return JSON.parse(localStorage.getItem('ilhaDoReino') || '{}'); } catch { return {}; } })();
+let classeIdx = Math.max(0, CLASSES.findIndex(c => c.id === salvo.classe));
+let semente = salvo.semente || 20261027;
+let modo = salvo.camera === 'primeira' ? 'primeira' : 'maquete';   // 'maquete' | 'primeira'
+const salvar = () => { try { localStorage.setItem('ilhaDoReino', JSON.stringify({ classe: CLASSES[classeIdx].id, semente, camera: modo })); } catch {} };
+
+/* ------------------------------------------------------- aleatório */
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function ruido(seed) {
+  const r = rng(seed), P = 64, g = []; for (let i = 0; i < P * P; i++) g.push(r());
+  const v = (x, y) => g[((y % P + P) % P) * P + ((x % P + P) % P)];
+  const s = t => t * t * (3 - 2 * t);
+  return (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), xf = s(x - xi), yf = s(y - yi);
+    const a = v(xi, yi), b = v(xi + 1, yi), c = v(xi, yi + 1), d = v(xi + 1, yi + 1);
+    return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf; };
+}
+
+/* ------------------------------------------------------- imagens */
+const IMG = {};
+async function carregarImagens() {
+  await Promise.all(Object.entries(A).map(([k, uri]) => new Promise((ok, erro) => {
+    const im = new Image(); im.onload = () => { IMG[k] = im; ok(); }; im.onerror = erro; im.src = uri;
+  })));
+}
+
+/* ------------------------------------------------------- render */
+const canvas = document.getElementById('cena');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+renderer.xr.setFoveation(1);
+const ANISO = renderer.capabilities.getMaxAnisotropy();
+
+const cena = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.02, 60);
+// o "corpo" do jogador: em 1ª pessoa ele anda junto com o herói
+const rig = new THREE.Group(); rig.add(camera); cena.add(rig);
+const CIMA = new THREE.Vector3(0, 1, 0);
+addEventListener('resize', () => { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); });
+
+function textura(src, opts = {}) {
+  const t = src instanceof HTMLCanvasElement ? new THREE.CanvasTexture(src) : new THREE.Texture(src);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.magFilter = THREE.NearestFilter;
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.generateMipmaps = true;
+  t.anisotropy = ANISO;
+  if (opts.repetir) t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.needsUpdate = true;
+  return t;
+}
+const recorte = (img, x, y, w = 64, h = 64) => { const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(img, x, y, w, h, 0, 0, w, h); return c; };
+
+/* céu e chão de referência (conforto em VR) */
+function montarCeu() {
+  const geo = new THREE.SphereGeometry(30, 32, 16), cor = [], p = geo.attributes.position;
+  const alto = new THREE.Color('#4f93b8'), meio = new THREE.Color('#bfe3e4'), baixo = new THREE.Color('#1f3440'), c = new THREE.Color();
+  for (let i = 0; i < p.count; i++) { const y = p.getY(i) / 30;
+    if (y > 0) c.copy(meio).lerp(alto, Math.pow(y, .6)); else c.copy(meio).lerp(baixo, Math.min(1, -y * 3));
+    cor.push(c.r, c.g, c.b); }
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(cor, 3));
+  cena.add(new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, depthWrite: false })));
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256; const g = cv.getContext('2d');
+  const gr = g.createRadialGradient(128, 128, 10, 128, 128, 128); gr.addColorStop(0, 'rgba(60,86,96,1)'); gr.addColorStop(.7, 'rgba(42,62,72,.9)'); gr.addColorStop(1, 'rgba(31,52,64,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  g.strokeStyle = 'rgba(255,246,221,.08)'; g.lineWidth = 1;
+  for (let i = 1; i < 8; i++) { g.beginPath(); g.arc(128, 128, i * 16, 0, Math.PI * 2); g.stroke(); }
+  const chao = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthWrite: false }));
+  chao.rotation.x = -Math.PI / 2; cena.add(chao); chaoRef = chao;
+}
+let chaoRef;
+
+/* ------------------------------------------------------- sprites */
+const sombraTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const r = g.createRadialGradient(32, 32, 2, 32, 32, 30); r.addColorStop(0, 'rgba(20,16,30,.55)'); r.addColorStop(1, 'rgba(20,16,30,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+const sombraMat = new THREE.MeshBasicMaterial({ map: sombraTex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+const sombraGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+
+const texBase = {};
+function texDe(chave) { return texBase[chave] || (texBase[chave] = textura(IMG[chave])); }
+const geoCache = {};
+function geoDe(chave) {
+  if (geoCache[chave]) return geoCache[chave];
+  const [W, H, , x0, , x1, y1] = M[chave];
+  const g = new THREE.PlaneGeometry(W / 64, H / 64);
+  // centro do desenho no eixo X e os pés (linha y1 do quadro) na origem
+  g.translate((W / 2 - (x0 + x1) / 2) / 64, (y1 - H / 2) / 64, 0);
+  return geoCache[chave] = g;
+}
+
+/** Figura animada: um plano que gira só no eixo vertical, de frente para quem olha. */
+class Figura {
+  constructor(chave, { fps = 10, compartilhada = false, escala = 1 } = {}) {
+    this.fps = fps; this.t = Math.random() * 10; this.esc = escala; this.lado = 1;
+    this.obj = new THREE.Group();
+    this.mat = new THREE.MeshBasicMaterial({ alphaTest: .45, alphaToCoverage: true, side: THREE.DoubleSide, color: 0xffffff });
+    this.mesh = new THREE.Mesh(undefined, this.mat);
+    this.obj.add(this.mesh);
+    this.compartilhada = compartilhada;
+    this.trocar(chave, true);
+  }
+  trocar(chave, reiniciar) {
+    if (this.chave === chave) return;
+    this.chave = chave; this.n = M[chave][2];
+    const base = texDe(chave);
+    if (this.compartilhada) this.mat.map = base;
+    else { if (this.tex) this.tex.dispose?.(); this.tex = base.clone(); this.tex.needsUpdate = true; this.tex.repeat.set(1 / this.n, 1); this.mat.map = this.tex; }
+    if (this.compartilhada) { base.repeat.set(1 / this.n, 1); }
+    this.mesh.geometry = geoDe(chave);
+    this.mat.needsUpdate = true;
+    if (reiniciar) this.t = 0;
+  }
+  quadro(i) { if (!this.compartilhada) this.tex.offset.x = (i % this.n) / this.n; }
+  passo(dt) { this.t += dt; this.quadro(Math.floor(this.t * this.fps)); }
+  duracao() { return this.n / this.fps; }
+  olhar(camLocal) { // gira em Y para a câmera (já em coordenadas do pai)
+    const p = this.obj.position;
+    this.obj.rotation.y = Math.atan2(camLocal.x - p.x, camLocal.z - p.z);
+    this.mesh.scale.set(this.lado * this.esc, this.esc, 1);
+  }
+}
+
+/* animação de texturas compartilhadas (árvores, arbustos, espuma) */
+const animadas = [];
+function texAnimada(chave, fps) {
+  const t = textura(IMG[chave]); const n = M[chave][2]; t.repeat.set(1 / n, 1);
+  const a = { t, n, fps, tempo: Math.random() * 3 }; animadas.push(a); return t;
+}
+
+/* ------------------------------------------------------- blocos */
+let MAT_BLOCO;
+function materiaisBloco() {
+  const ts = IMG.tiles1;
+  const grama = recorte(ts, 64, 64), grama2 = recorte(ts, 128, 128);
+  const ladoAlto = recorte(ts, 384, 256), ladoBaixo = recorte(ts, 448, 256);
+  // borda de grama caindo por cima da pedra (como no Tiny Swords)
+  const lip = recorte(ts, 384, 192); ladoAlto.getContext('2d').drawImage(lip, 0, 40, 64, 24, 0, 0, 64, 24);
+  const m = c => new THREE.MeshBasicMaterial({ map: textura(c), vertexColors: true });
+  MAT_BLOCO = [m(grama), m(grama2), m(ladoAlto), m(ladoBaixo)];
+}
+
+/** Gera a malha só com as faces visíveis. alt(x,z) dá a altura da coluna (0 = vazio). */
+function malhaBlocos(nx, nz, alt, ox = 0, oz = 0, variante = () => 0) {
+  const grupos = [[], [], [], []].map(() => ({ p: [], uv: [], c: [] }));
+  const quad = (g, a, b, c, d, luz) => {
+    const G = grupos[g];
+    for (const v of [a, b, c, a, c, d]) G.p.push(v[0] + ox, v[1], v[2] + oz);
+    G.uv.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1);
+    for (let i = 0; i < 6; i++) G.c.push(luz, luz, luz);
+  };
+  for (let x = 0; x < nx; x++) for (let z = 0; z < nz; z++) {
+    const h = alt(x, z); if (h <= 0) continue;
+    quad(variante(x, z), [x, h, z + 1], [x + 1, h, z + 1], [x + 1, h, z], [x, h, z], 1);
+    const lados = [
+      [alt(x + 1, z), (y0, y1) => [[x + 1, y0, z + 1], [x + 1, y0, z], [x + 1, y1, z], [x + 1, y1, z + 1]], .78],
+      [alt(x - 1, z), (y0, y1) => [[x, y0, z], [x, y0, z + 1], [x, y1, z + 1], [x, y1, z]], .78],
+      [alt(x, z + 1), (y0, y1) => [[x, y0, z + 1], [x + 1, y0, z + 1], [x + 1, y1, z + 1], [x, y1, z + 1]], .9],
+      [alt(x, z - 1), (y0, y1) => [[x + 1, y0, z], [x, y0, z], [x, y1, z], [x + 1, y1, z]], .9],
+    ];
+    for (const [nh, f, luz] of lados) for (let k = Math.max(0, nh); k < h; k++) {
+      const sombra = 1 - (h - 1 - k) * .07;
+      quad(k === h - 1 ? 2 : 3, ...f(k, k + 1), luz * sombra);
+    }
+  }
+  const geo = new THREE.BufferGeometry(), p = [], uv = [], c = [];
+  grupos.forEach((G, i) => { geo.addGroup(p.length / 3, G.p.length / 3, i); p.push(...G.p); uv.push(...G.uv); c.push(...G.c); });
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+  geo.computeBoundingSphere();
+  return new THREE.Mesh(geo, MAT_BLOCO);
+}
+
+/* ------------------------------------------------------- a ilha */
+const ilha = new THREE.Group();          // tudo do jogo mora aqui; 1 unidade = 1 bloco
+ilha.scale.setScalar(BLOCO);
+const raiz = new THREE.Group();          // posição/rotação/zoom da maquete
+raiz.add(ilha); cena.add(raiz);
+const ajuste = { giro: 0, altura: .78, zoom: 1, distancia: 1.05 };
+
+let mundo;   // { h, bloqueado, nascer, ... }
+const enfeites = new THREE.Group(); ilha.add(enfeites);
+let figurasMundo = [], ovelhas = [], nuvens = [], arvores = [];
+
+function gerarIlha(seed) {
+  const r = rng(seed), n1 = ruido(seed + 1), n2 = ruido(seed + 2);
+  const h = Array.from({ length: N }, () => new Array(N).fill(0));
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) {
+    const dx = (x + .5 - N / 2) / (N / 2), dz = (z + .5 - N / 2) / (N / 2), d = Math.hypot(dx, dz);
+    const v = n1(x * .11, z * .11) * .75 + n2(x * .27, z * .27) * .35 - Math.pow(d, 2.4) * 1.2 + .38;
+    h[x][z] = v < .12 ? 0 : Math.min(4, 1 + Math.floor((v - .12) / .2));
+  }
+  // degraus de no máximo 1 bloco: tudo dá para subir pulando
+  for (let it = 0, mudou = true; mudou && it < 20; it++) { mudou = false;
+    for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) { if (!h[x][z]) continue;
+      let menor = 9; for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const v = h[x + a]?.[z + b] ?? 0; if (v > 0) menor = Math.min(menor, v); }
+      if (menor === 9) menor = 0;
+      if (h[x][z] > menor + 1) { h[x][z] = menor + 1; mudou = true; } } }
+  // fica só a maior ilha
+  const comp = Array.from({ length: N }, () => new Array(N).fill(-1)); let maior = -1, tam = 0, id = 0;
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) if (h[x][z] && comp[x][z] < 0) {
+    const fila = [[x, z]]; comp[x][z] = id; let c = 0;
+    while (fila.length) { const [a, b] = fila.pop(); c++; for (const [p, q] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const u = a + p, w = b + q;
+      if (u >= 0 && w >= 0 && u < N && w < N && h[u][w] && comp[u][w] < 0) { comp[u][w] = id; fila.push([u, w]); } } }
+    if (c > tam) { tam = c; maior = id; } id++; }
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) if (comp[x][z] !== maior) h[x][z] = 0;
+
+  // ponto de nascer: terra perto do centro
+  let nascer = [N / 2, N / 2], melhor = 1e9;
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) if (h[x][z]) { const d = Math.hypot(x - N / 2, z - N / 2) - h[x][z] * .6; if (d < melhor) { melhor = d; nascer = [x, z]; } }
+  const bloqueado = Array.from({ length: N }, () => new Array(N).fill(0));
+  return { h, bloqueado, nascer, r, livres: tam };
+}
+
+function construirIlha() {
+  // limpa
+  while (ilha.children.length) ilha.remove(ilha.children[0]);
+  enfeites.clear(); ilha.add(enfeites);
+  figurasMundo = []; ovelhas = []; nuvens = []; arvores = [];
+  animadas.length = 0;
+
+  mundo = gerarIlha(semente);
+  const { h, r } = mundo;
+  const alt = (x, z) => (x < 0 || z < 0 || x >= N || z >= N) ? 0 : h[x][z];
+
+  const blocos = malhaBlocos(N, N, alt, -N / 2, -N / 2, (x, z) => ((x * 7 + z * 13) % 5 === 0 ? 1 : 0));
+  ilha.add(blocos);
+
+  // base da maquete: água por cima, "bolo" por baixo
+  const L = N + 1;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(L, 2.6, L), [
+    new THREE.MeshBasicMaterial({ color: '#2f7f86' }), new THREE.MeshBasicMaterial({ color: '#2f7f86' }),
+    new THREE.MeshBasicMaterial({ map: aguaTex(L) }), new THREE.MeshBasicMaterial({ color: '#1d4a52' }),
+    new THREE.MeshBasicMaterial({ color: '#3a919a' }), new THREE.MeshBasicMaterial({ color: '#3a919a' }),
+  ]);
+  base.position.y = AGUA - 1.3; ilha.add(base);
+  // brilho da água (faixa clara em volta da maquete)
+  const borda = new THREE.Mesh(new THREE.BoxGeometry(L + .3, .25, L + .3), new THREE.MeshBasicMaterial({ color: '#2b2232' }));
+  borda.position.y = AGUA - 2.6 - .1; ilha.add(borda);
+
+  // espuma nas praias
+  const espTex = texAnimada('foam', 9);
+  const espMat = new THREE.MeshBasicMaterial({ map: espTex, transparent: true, depthWrite: false, opacity: .95 });
+  const espGeo = new THREE.PlaneGeometry(3.4, 3.4).rotateX(-Math.PI / 2);
+  for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) {
+    if (!h[x][z]) continue;
+    const praia = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => !alt(x + a, z + b));
+    if (!praia) continue;
+    const m = new THREE.Mesh(espGeo, espMat); m.position.set(x + .5 - N / 2, AGUA + .02, z + .5 - N / 2); m.renderOrder = 1; ilha.add(m);
+  }
+
+  // decoração e obstáculos
+  const ocupado = new Set(), [sx, sz] = mundo.nascer;
+  const livre = (x, z, raio = 0) => h[x][z] > 0 && !ocupado.has(x + ',' + z) && Math.hypot(x - sx, z - sz) > raio;
+  const terra = []; for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) if (h[x][z]) terra.push([x, z]);
+  const sortear = () => terra[Math.floor(r() * terra.length)];
+  const colocar = (chave, x, z, { fps = 8, bloqueia = false, compart = true, desvio = .18, escala = 1 } = {}) => {
+    const f = new Figura(chave, { fps, compartilhada: compart, escala });
+    if (compart) f.mat.map = texAnimadaCache(chave, fps);
+    f.obj.position.set(x + .5 - N / 2 + (r() - .5) * desvio * 2, h[x][z], z + .5 - N / 2 + (r() - .5) * desvio * 2);
+    f.lado = r() < .5 ? -1 : 1;
+    enfeites.add(f.obj); figurasMundo.push(f); ocupado.add(x + ',' + z);
+    if (bloqueia) mundo.bloqueado[x][z] = 1;
+    return f;
+  };
+  const cacheAnim = {};
+  function texAnimadaCache(chave, fps) { return cacheAnim[chave] || (cacheAnim[chave] = M[chave][2] > 1 ? texAnimada(chave, fps) : textura(IMG[chave])); }
+
+  const nArv = Math.floor(terra.length * .07);
+  for (let i = 0; i < nArv * 3 && arvores.length < nArv; i++) {
+    const [x, z] = sortear(); if (!livre(x, z, 2.5)) continue;
+    // árvores gostam de vizinhas: bosques
+    arvores.push(colocar('tree' + (1 + Math.floor(r() * 4)), x, z, { fps: 7, bloqueia: true, desvio: .08, escala: .85 + r() * .2 }));
+    for (const [a, b] of [[1, 0], [0, 1], [-1, 1]]) if (r() < .45 && x + a < N && z + b < N && x + a >= 0 && livre(x + a, z + b, 2.5) && h[x + a][z + b] === h[x][z])
+      arvores.push(colocar('tree' + (1 + Math.floor(r() * 4)), x + a, z + b, { fps: 7, bloqueia: true, desvio: .08, escala: .85 + r() * .2 }));
+  }
+  for (let i = 0, ouro = 0; i < 80 && ouro < 3; i++) { const [x, z] = sortear(); if (!livre(x, z, 3)) continue; colocar('gold' + (3 + ouro), x, z, { bloqueia: true, desvio: .05 }); ouro++; }
+  for (let i = 0; i < 26; i++) { const [x, z] = sortear(); if (!livre(x, z, 1.5)) continue; colocar('bush' + (1 + Math.floor(r() * 4)), x, z, { fps: 8, escala: .8 }); }
+  for (let i = 0; i < 12; i++) { const [x, z] = sortear(); if (!livre(x, z, 1.5)) continue; colocar('rock' + (1 + Math.floor(r() * 4)), x, z, { escala: .9 }); }
+
+  // ovelhas
+  for (let i = 0, n = 0; i < 60 && n < 6; i++) {
+    const [x, z] = sortear(); if (!livre(x, z, 3)) continue;
+    const f = new Figura('sheep_idle', { fps: 8 });
+    const o = { f, x: x + .5, z: z + .5, y: h[x][z], estado: 'parada', t: r() * 3, alvo: null, vel: 1.1, sombra: novaSombra(.7) };
+    f.obj.position.set(o.x - N / 2, o.y, o.z - N / 2); enfeites.add(f.obj); ovelhas.push(o); n++;
+  }
+
+  // nuvens bem acima, devagar
+  for (let i = 0; i < 3; i++) {
+    const f = new Figura('cloud' + (i + 1), { compartilhada: true });
+    f.mat.map = textura(IMG['cloud' + (i + 1)]); f.mat.transparent = true; f.mat.opacity = .82; f.mat.alphaTest = .05; f.mat.alphaToCoverage = false; f.mat.depthWrite = false;
+    f.esc = 1.6; const ang = i * 2.1 + r();
+    f.obj.position.set(Math.cos(ang) * 17, 11 + i * 2.5, Math.sin(ang) * 17);
+    nuvens.push({ f, ang, raio: 17 + i * 2, vel: .025 + i * .01 }); ilha.add(f.obj); figurasMundo.push(f);
+  }
+
+  ilha.add(palco.grupo); ilha.add(heroi.f.obj); ilha.add(heroi.sombra); ilha.add(rotulo.mesh); ilha.add(poeiraGrupo);
+  ilha.add(dicaVR.mesh);
+  dicaVR.mesh.position.set(0, AGUA + .2, N / 2 + 2.2);
+}
+
+/* água com reflexos em pixel, que se mexem devagar */
+let aguaT;
+function aguaTex(L) {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = '#47aba9'; g.fillRect(0, 0, 64, 64);
+  const r = rng(7); g.fillStyle = 'rgba(255,246,221,.22)';
+  for (let i = 0; i < 9; i++) { const x = Math.floor(r() * 60), y = Math.floor(r() * 62); g.fillRect(x, y, 3 + Math.floor(r() * 4), 1); }
+  g.fillStyle = 'rgba(31,80,90,.18)';
+  for (let i = 0; i < 6; i++) g.fillRect(Math.floor(r() * 60), Math.floor(r() * 62), 4, 1);
+  aguaT = textura(c, { repetir: true }); aguaT.repeat.set(L / 3, L / 3); return aguaT;
+}
+
+/* ------------------------------------------------------- sombras, poeira, rótulos */
+function novaSombra(tam) { const s = new THREE.Mesh(sombraGeo, sombraMat); s.scale.set(tam, 1, tam * .7); enfeites.add(s); return s; }
+
+const poeiraGrupo = new THREE.Group(), poeiras = [];
+function soltarPoeira(x, y, z) {
+  let p = poeiras.find(p => !p.vivo);
+  if (!p) { if (poeiras.length > 10) return; p = { f: new Figura('dust', { fps: 16, escala: 1.1 }), vivo: false }; poeiraGrupo.add(p.f.obj); poeiras.push(p); }
+  p.vivo = true; p.f.t = 0; p.f.obj.visible = true; p.f.obj.position.set(x, y, z);
+}
+
+class Rotulo {
+  constructor(larg = 512, alt = 160, mundoLarg = 5) {
+    this.c = document.createElement('canvas'); this.c.width = larg; this.c.height = alt;
+    this.tex = new THREE.CanvasTexture(this.c); this.tex.colorSpace = THREE.SRGBColorSpace; this.tex.anisotropy = ANISO;
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(mundoLarg, mundoLarg * alt / larg),
+      new THREE.MeshBasicMaterial({ map: this.tex, transparent: true, depthWrite: false, depthTest: false }));
+    this.mesh.renderOrder = 10;
+  }
+  desenhar(fn) { const g = this.c.getContext('2d'); g.clearRect(0, 0, this.c.width, this.c.height); fn(g, this.c.width, this.c.height); this.tex.needsUpdate = true; }
+}
+const painel = (g, w, h, r = 22) => {
+  g.fillStyle = 'rgba(43,34,50,.92)'; g.strokeStyle = '#a8743f'; g.lineWidth = 6;
+  g.beginPath(); g.roundRect(6, 6, w - 12, h - 12, r); g.fill(); g.stroke();
+};
+
+const rotulo = new Rotulo(560, 210, 5.2);
+const dicaVR = new Rotulo(900, 120, 12);
+const FONTE = "'Pixelify Sans', ui-monospace, monospace";
+
+function desenharRotuloClasse(c) {
+  rotulo.desenhar((g, w, h) => {
+    painel(g, w, h);
+    g.textAlign = 'center'; g.fillStyle = '#ffd84a'; g.font = `700 54px ${FONTE}`; g.fillText(c.nome, w / 2, 66);
+    g.fillStyle = 'rgba(255,246,221,.75)'; g.font = `400 28px ${FONTE}`; g.fillText(c.papel, w / 2, 102);
+    const st = [['VID', c.vida, '#d6453a'], ['FOR', c.forca, '#ffd84a'], ['VEL', c.vel, '#47aba9']];
+    st.forEach(([t, v, cor], i) => { const y = 132 + i * 22, x = 120;
+      g.textAlign = 'right'; g.fillStyle = 'rgba(255,246,221,.7)'; g.font = `600 20px ${FONTE}`; g.fillText(t, x - 10, y + 15);
+      g.fillStyle = 'rgba(255,246,221,.12)'; g.fillRect(x, y + 3, 320, 14);
+      g.fillStyle = cor; g.fillRect(x, y + 3, 64 * v, 14); });
+  });
+}
+function desenharDica(texto) {
+  dicaVR.desenhar((g, w, h) => { painel(g, w, h, 30); g.textAlign = 'center'; g.fillStyle = '#fff6dd'; g.font = `600 44px ${FONTE}`; g.fillText(texto, w / 2, 78); });
+}
+
+/* ------------------------------------------------------- palco de escolha */
+const palco = { grupo: new THREE.Group(), figuras: [], altura: 0 };
+function montarPalco() {
+  const n = CLASSES.length, esp = 2;
+  const larg = n * esp + 1;
+  const m = malhaBlocos(larg, 2, (x, z) => (x >= 0 && z >= 0 && x < larg && z < 2) ? 1 : 0, -larg / 2, -1);
+  m.position.y = -1; palco.grupo.add(m);
+  CLASSES.forEach((c, i) => {
+    const f = new Figura(c.idle, { fps: 9 });
+    f.obj.position.set((i - (n - 1) / 2) * esp, 0, 0);
+    f.sombra = new THREE.Mesh(sombraGeo, sombraMat); f.sombra.scale.set(.9, 1, .6); f.sombra.position.set(f.obj.position.x, .01, 0);
+    palco.grupo.add(f.obj, f.sombra); palco.figuras.push(f);
+  });
+}
+
+/* ------------------------------------------------------- herói */
+const heroi = { f: null, x: 0, z: 0, y: 0, vy: 0, chao: true, atacando: 0, correndo: false, sombra: null, raio: .28, mostrarNome: 0 };
+function criarHeroi() {
+  heroi.f = new Figura(CLASSES[classeIdx].idle, { fps: 10 });
+  heroi.sombra = new THREE.Mesh(sombraGeo, sombraMat); heroi.sombra.scale.set(.9, 1, .6);
+}
+function trocarClasseHeroi() { const c = CLASSES[classeIdx]; heroi.f.trocar(heroi.atacando > 0 ? c.atk : heroi.correndo ? c.run : c.idle, true); }
+
+const altura = (x, z) => (x < 0 || z < 0 || x >= N || z >= N) ? 0 : mundo.h[x][z];
+function solido(cx, cz, y) {
+  if (cx < 0 || cz < 0 || cx >= N || cz >= N) return true;
+  const h = mundo.h[cx][cz];
+  return h === 0 || mundo.bloqueado[cx][cz] || h > y + .05;
+}
+function colide(x, z, y, r) {
+  for (const [a, b] of [[-r, -r], [r, -r], [-r, r], [r, r]]) if (solido(Math.floor(x + a), Math.floor(z + b), y)) return true;
+  return false;
+}
+function chaoEm(x, z, r) {
+  let m = 0; for (const [a, b] of [[-r, -r], [r, -r], [-r, r], [r, r], [0, 0]]) m = Math.max(m, altura(Math.floor(x + a), Math.floor(z + b)));
+  return m;
+}
+
+/* ------------------------------------------------------- som (gerado) */
+let audio;
+function som(tipo) {
+  try {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+    const t = audio.currentTime, o = audio.createOscillator(), g = audio.createGain();
+    const def = { pulo: ['square', 260, 520, .12, .07], cair: ['triangle', 160, 70, .1, .12], golpe: ['sawtooth', 420, 120, .14, .05],
+      escolha: ['square', 520, 780, .08, .05], ok: ['square', 392, 784, .2, .06], ovelha: ['triangle', 700, 520, .25, .05] }[tipo];
+    o.type = def[0]; o.frequency.setValueAtTime(def[1], t); o.frequency.exponentialRampToValueAtTime(def[2], t + def[3]);
+    g.gain.setValueAtTime(def[4], t); g.gain.exponentialRampToValueAtTime(.0001, t + def[3]);
+    o.connect(g).connect(audio.destination); o.start(t); o.stop(t + def[3] + .02);
+  } catch {}
+}
+
+/* ------------------------------------------------------- conforto em VR */
+// bordas escurecem quando você anda em 1ª pessoa; fade preto ao trocar de câmera
+const vinheta = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d');
+  const r = g.createRadialGradient(128, 128, 40, 128, 128, 128); r.addColorStop(0, 'rgba(10,12,18,0)'); r.addColorStop(.55, 'rgba(10,12,18,0)'); r.addColorStop(1, 'rgba(10,12,18,1)');
+  g.fillStyle = r; g.fillRect(0, 0, 256, 256);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(.9, .9), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false, depthWrite: false, opacity: 0 }));
+  m.position.z = -.25; m.renderOrder = 1000; m.visible = false; camera.add(m); return m;
+})();
+const veu = new THREE.Mesh(new THREE.SphereGeometry(.12, 16, 8), new THREE.MeshBasicMaterial({ color: '#0a0c12', side: THREE.BackSide, transparent: true, depthTest: false, depthWrite: false, opacity: 0 }));
+veu.renderOrder = 1001; veu.visible = false; camera.add(veu);
+const fade = { val: 0, alvo: 0, depois: null };
+function comFade(fn) { if (fade.depois) return; if (!renderer.xr.isPresenting && menuAberto()) { fn(); return; } fade.depois = fn; fade.alvo = 1; }
+function atualizarFade(dt) {
+  fade.val += Math.sign(fade.alvo - fade.val) * Math.min(Math.abs(fade.alvo - fade.val), dt * 7);
+  if (fade.val >= 1 && fade.depois) { const f = fade.depois; fade.depois = null; f(); fade.alvo = 0; }
+  veu.material.opacity = fade.val; veu.visible = fade.val > .001;
+}
+const avisoCam = new Rotulo(1100, 120, 1.0);
+avisoCam.mesh.position.set(0, -.28, -1.1); camera.add(avisoCam.mesh); avisoCam.mesh.visible = false;
+let avisoCamT = 0;
+
+/* ------------------------------------------------------- estados */
+let estado = 'escolha';      // 'escolha' | 'jogo'
+let noVR = false;
+const fp = () => estado === 'jogo' && modo === 'primeira';
+let giroFP = 0, ultimoOff = null;
+const olharPC = { yaw: 0, pitch: -.15 };
+function marcarCamera() {
+  document.querySelectorAll('#cameras .opc').forEach(b => { const s = b.dataset.modo === modo; b.classList.toggle('sel', s); b.setAttribute('aria-pressed', s); });
+}
+function alternarCamera(novo) {
+  novo = novo || (modo === 'maquete' ? 'primeira' : 'maquete');
+  if (novo === modo) return;
+  const aplicar = () => {
+    modo = novo; salvar(); marcarCamera(); ultimoOff = null;
+    if (fp()) prepararPrimeiraPessoa();
+    mostrarAvisoCam(); atualizarHud();
+  };
+  estado === 'jogo' ? comFade(aplicar) : aplicar();
+  som('escolha');
+}
+function prepararPrimeiraPessoa() {
+  // olha para o centro da ilha ao entrar
+  const ang = Math.atan2(-(heroi.x - N / 2), -(heroi.z - N / 2));
+  giroFP = ang; olharPC.yaw = ang; olharPC.pitch = -.15;
+}
+function mostrarAvisoCam() {
+  if (!fp()) { avisoCam.mesh.visible = false; return; }
+  avisoCam.desenhar((g, w, h) => { painel(g, w, h, 30); g.textAlign = 'center'; g.fillStyle = '#fff6dd'; g.font = `600 36px ${FONTE}`;
+    g.fillText('Analógico dir.: virar 30°  ·  Clique no analógico: maquete', w / 2, 72); });
+  avisoCamT = noVR ? 5 : 0;
+}
+function irParaEscolha() {
+  if (fp()) { comFade(irParaEscolhaJa); return; }
+  irParaEscolhaJa();
+}
+function irParaEscolhaJa() {
+  estado = 'escolha'; palco.grupo.visible = true; heroi.f.obj.visible = false; heroi.sombra.visible = false;
+  posicionarPalco(); destacar(); desenharDica('Analógico: escolher  ·  A: confirmar  ·  Y: outra ilha');
+  atualizarHud();
+}
+function posicionarPalco() {
+  let topo = 0; for (let x = 0; x < N; x++) for (let z = 0; z < N; z++) topo = Math.max(topo, mundo.h[x][z]);
+  palco.grupo.position.set(0, topo + 3.4, 0);
+}
+function destacar() {
+  palco.figuras.forEach((f, i) => { const s = i === classeIdx; f.mat.color.setScalar(s ? 1 : .45); f.esc = s ? 1.15 : .9; });
+  desenharRotuloClasse(CLASSES[classeIdx]);
+  document.querySelectorAll('.carta').forEach((el, i) => { el.classList.toggle('sel', i === classeIdx); el.setAttribute('aria-pressed', i === classeIdx); });
+}
+function escolher(d) { classeIdx = (classeIdx + d + CLASSES.length) % CLASSES.length; destacar(); som('escolha'); salvar(); }
+function confirmar() {
+  if (modo === 'primeira') { som('ok'); comFade(confirmarJa); return; }
+  confirmarJa();
+}
+function confirmarJa() {
+  estado = 'jogo'; palco.grupo.visible = false;
+  const [sx, sz] = mundo.nascer; heroi.x = sx + .5; heroi.z = sz + .5;
+  heroi.y = palco.grupo.position.y; heroi.vy = 0; heroi.chao = false; heroi.atacando = 0; heroi.f.lado = 1;
+  heroi.f.obj.visible = true; heroi.sombra.visible = true; heroi.mostrarNome = 3;
+  if (modo === 'primeira') { heroi.y = altura(sx, sz); heroi.chao = true; ultimoOff = null; prepararPrimeiraPessoa(); mostrarAvisoCam(); }
+  trocarClasseHeroi(); som('ok'); salvar();
+  desenharDica('Andar  ·  A: pular  ·  Gatilho: atacar  ·  B: herói  ·  Clique analóg.: câmera');
+  atualizarHud();
+}
+function novaIlha() { semente = (Math.random() * 1e9) | 0; salvar(); construirIlha(); irParaEscolha(); }
+
+/* ------------------------------------------------------- entrada */
+const tecla = {};
+addEventListener('keydown', e => {
+  if (e.repeat) { tecla[e.code] = true; return; }
+  tecla[e.code] = true;
+  if (!menuAberto()) {
+    if (e.code === 'Escape') { abrirMenu(); return; }
+    if (estado === 'escolha') {
+      if (['ArrowLeft', 'KeyA'].includes(e.code)) escolher(-1);
+      if (['ArrowRight', 'KeyD'].includes(e.code)) escolher(1);
+      if (['Enter', 'Space'].includes(e.code)) confirmar();
+      if (e.code === 'KeyN') novaIlha();
+    } else {
+      if (e.code === 'Space') pular();
+      if (e.code === 'KeyJ') atacar();
+      if (e.code === 'KeyB' || e.code === 'Backspace') irParaEscolha();
+    }
+    if (e.code === 'KeyV') alternarCamera();
+    if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  }
+});
+addEventListener('keyup', e => { tecla[e.code] = false; });
+
+/* câmera do computador: orbita a maquete */
+const orbita = { theta: 0, phi: .92, raio: 1.95 };
+let arrastando = null, moveu = 0;
+canvas.addEventListener('pointerdown', e => { arrastando = { x: e.clientX, y: e.clientY }; moveu = 0; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', e => { if (!arrastando) return;
+  const dx = e.clientX - arrastando.x, dy = e.clientY - arrastando.y; moveu += Math.abs(dx) + Math.abs(dy);
+  if (fp()) { olharPC.yaw -= dx * .005; olharPC.pitch = Math.min(1.3, Math.max(-1.3, olharPC.pitch - dy * .004)); }
+  else { orbita.theta -= dx * .006; orbita.phi = Math.min(1.45, Math.max(.25, orbita.phi - dy * .005)); }
+  arrastando = { x: e.clientX, y: e.clientY }; });
+canvas.addEventListener('pointerup', () => { if (arrastando && moveu < 6 && !menuAberto()) { estado === 'jogo' ? atacar() : confirmar(); } arrastando = null; });
+canvas.addEventListener('wheel', e => { if (fp()) return; orbita.raio = Math.min(3, Math.max(.45, orbita.raio * (1 + e.deltaY * .001))); e.preventDefault(); }, { passive: false });
+
+/* controles do Quest */
+const anterior = new Map();   // fonte -> botões do quadro anterior
+const eixoTravado = new Map();
+function lerControles() {
+  const s = renderer.xr.getSession(); const out = { mx: 0, mz: 0, giro: 0, sobe: 0, zoom: false };
+  if (!s) return out;
+  for (const src of s.inputSources) {
+    const gp = src.gamepad; if (!gp) continue;
+    const ant = anterior.get(src) || [];
+    const apertou = i => gp.buttons[i]?.pressed && !ant[i];
+    const ax = gp.axes[2] || 0, ay = gp.axes[3] || 0;
+    if (apertou(3)) alternarCamera();                                      // clique no analógico
+    if (src.handedness === 'left') {
+      out.mx = ax; out.mz = ay;
+      if (apertou(4)) estado === 'escolha' ? confirmar() : pular();        // X
+      if (apertou(5) && estado === 'escolha') novaIlha();                  // Y
+      if (apertou(0) && estado === 'jogo') atacar();
+    } else {
+      out.giro = ax; out.sobe = ay; out.zoom = !!gp.buttons[1]?.pressed;
+      if (apertou(4)) estado === 'escolha' ? confirmar() : pular();        // A
+      if (apertou(5) && estado === 'jogo') irParaEscolha();                // B
+      if (apertou(0)) estado === 'jogo' ? atacar() : confirmar();
+    }
+    // 1ª pessoa: o analógico direito vira 30° por empurrão (giro suave dá enjoo)
+    if (fp() && src.handedness !== 'left') {
+      const trav = eixoTravado.get(src);
+      if (!trav && Math.abs(ax) > .6) { giroFP -= Math.sign(ax) * Math.PI / 6; ultimoOff = null; eixoTravado.set(src, true); som('escolha'); }
+      if (trav && Math.abs(ax) < .3) eixoTravado.set(src, false);
+      out.giro = 0; out.sobe = 0;
+    }
+    // escolher classe com o analógico (um passo por empurrão)
+    if (estado === 'escolha' && src.handedness === 'left') {
+      const trav = eixoTravado.get(src);
+      if (!trav && Math.abs(ax) > .6) { escolher(ax > 0 ? 1 : -1); eixoTravado.set(src, true); }
+      if (trav && Math.abs(ax) < .3) eixoTravado.set(src, false);
+    }
+    anterior.set(src, gp.buttons.map(b => b.pressed));
+  }
+  return out;
+}
+function vibrar(forca = .4, ms = 40) {
+  const s = renderer.xr.getSession(); if (!s) return;
+  for (const src of s.inputSources) src.gamepad?.hapticActuators?.[0]?.pulse?.(forca, ms);
+}
+
+/* mãos simples para ver onde estão os controles */
+function montarMaos() {
+  for (let i = 0; i < 2; i++) {
+    const grip = renderer.xr.getControllerGrip(i);
+    const mao = new THREE.Mesh(new THREE.BoxGeometry(.035, .03, .09), new THREE.MeshBasicMaterial({ color: '#a8743f' }));
+    const ponta = new THREE.Mesh(new THREE.BoxGeometry(.036, .012, .02), new THREE.MeshBasicMaterial({ color: '#ffd84a' }));
+    ponta.position.set(0, .02, -.035); mao.add(ponta); grip.add(mao); rig.add(grip);
+  }
+}
+
+/* ------------------------------------------------------- ações */
+function pular() { if (estado !== 'jogo' || !heroi.chao) return; heroi.vy = PULO; heroi.chao = false; som('pulo'); vibrar(.25, 25);
+  soltarPoeira(heroi.x - N / 2, heroi.y + .05, heroi.z - N / 2); }
+function atacar() {
+  if (estado !== 'jogo' || heroi.atacando > 0) return;
+  const c = CLASSES[classeIdx]; heroi.f.trocar(c.atk, true); heroi.atacando = heroi.f.duracao(); som('golpe'); vibrar(.5, 50);
+  for (const o of ovelhas) { const d = Math.hypot(o.x - heroi.x, o.z - heroi.z);
+    if (d < 2.6) { o.estado = 'fugindo'; o.t = 1.6; const k = 1 / (d || 1); o.dir = [(o.x - heroi.x) * k, (o.z - heroi.z) * k]; o.f.trocar('sheep_move', true); som('ovelha'); } }
+  for (const a of arvores) { const p = a.obj.position; if (Math.hypot(p.x + N / 2 - heroi.x, p.z + N / 2 - heroi.z) < 1.6) a.balanco = .35; }
+}
+
+/* ------------------------------------------------------- atualização */
+const camMundo = new THREE.Vector3(), camLocal = new THREE.Vector3(), dirCam = new THREE.Vector3(), q = new THREE.Quaternion();
+function frenteDaCamera() {
+  camera.getWorldDirection(dirCam);
+  q.copy(ilha.getWorldQuaternion(new THREE.Quaternion())).invert(); dirCam.applyQuaternion(q);
+  const L = Math.hypot(dirCam.x, dirCam.z) || 1; return [dirCam.x / L, dirCam.z / L];
+}
+
+function moverHeroi(dt, mx, mz) {
+  const c = CLASSES[classeIdx];
+  const [fx, fz] = frenteDaCamera(), rx = -fz, rz = fx;
+  let vx = rx * mx + fx * -mz, vz = rz * mx + fz * -mz;
+  const m = Math.hypot(vx, vz); if (m > 1) { vx /= m; vz /= m; }
+  const vel = velocidade(c) * (heroi.atacando > 0 ? .35 : 1) * (fp() && renderer.xr.isPresenting ? .7 : 1);
+  const andando = m > .15;
+  if (andando) {
+    const nx = heroi.x + vx * vel * dt; if (!colide(nx, heroi.z, heroi.y, heroi.raio)) heroi.x = nx;
+    const nz = heroi.z + vz * vel * dt; if (!colide(heroi.x, nz, heroi.y, heroi.raio)) heroi.z = nz;
+    // lado do sprite em relação a quem olha
+    const ang = heroi.f.obj.rotation.y, dot = vx * Math.cos(ang) - vz * Math.sin(ang);
+    if (Math.abs(dot) > .1) heroi.f.lado = dot < 0 ? -1 : 1;
+  }
+  // gravidade
+  const chao = chaoEm(heroi.x, heroi.z, heroi.raio * .9);
+  if (!heroi.chao || heroi.y > chao + .001) {
+    heroi.vy -= G * dt; heroi.y += heroi.vy * dt;
+    if (heroi.y <= chao) { if (heroi.vy < -6) { som('cair'); vibrar(.35, 30); soltarPoeira(heroi.x - N / 2, chao + .05, heroi.z - N / 2); }
+      heroi.y = chao; heroi.vy = 0; heroi.chao = true; }
+    else heroi.chao = false;
+  }
+  // animação
+  if (heroi.atacando > 0) { heroi.atacando -= dt; if (heroi.atacando <= 0) heroi.f.trocar(andando ? c.run : c.idle, true); }
+  else if (andando !== heroi.correndo) heroi.f.trocar(andando ? c.run : c.idle, true);
+  heroi.correndo = andando; heroi.andandoVR = andando ? Math.min(1, m) : 0;
+  if (andando && heroi.chao && Math.random() < dt * 3) soltarPoeira(heroi.x - N / 2, heroi.y + .05, heroi.z - N / 2);
+
+  heroi.f.obj.position.set(heroi.x - N / 2, heroi.y, heroi.z - N / 2);
+  heroi.sombra.position.set(heroi.x - N / 2, chao + .02, heroi.z - N / 2);
+  const alto = Math.max(0, heroi.y - chao); heroi.sombra.scale.set(.9 / (1 + alto * .4), 1, .6 / (1 + alto * .4));
+}
+
+function moverOvelhas(dt) {
+  const r = Math.random;
+  for (const o of ovelhas) {
+    o.t -= dt;
+    if (o.estado === 'parada' && o.t <= 0) {
+      if (r() < .5) { o.estado = 'comendo'; o.t = 1.5 + r() * 2; o.f.trocar('sheep_grass', true); }
+      else { const a = r() * Math.PI * 2; o.dir = [Math.cos(a), Math.sin(a)]; o.estado = 'andando'; o.t = .8 + r() * 1.6; o.f.trocar('sheep_move', true); }
+    } else if (o.estado === 'comendo' && o.t <= 0) { o.estado = 'parada'; o.t = 1 + r() * 2; o.f.trocar('sheep_idle', true); }
+    else if (o.estado === 'andando' || o.estado === 'fugindo') {
+      const v = (o.estado === 'fugindo' ? 3.2 : 1.1) * dt;
+      const nx = o.x + o.dir[0] * v, nz = o.z + o.dir[1] * v;
+      const cx = Math.floor(nx), cz = Math.floor(nz);
+      // ovelha não pula: só anda no mesmo nível
+      if (cx >= 0 && cz >= 0 && cx < N && cz < N && mundo.h[cx][cz] === o.y && !mundo.bloqueado[cx][cz] && Math.hypot(nx - heroi.x, nz - heroi.z) > .5) {
+        o.x = nx; o.z = nz;
+      } else { const a = r() * Math.PI * 2; o.dir = [Math.cos(a), Math.sin(a)]; }
+      if (o.t <= 0) { o.estado = 'parada'; o.t = 1 + r() * 3; o.f.trocar('sheep_idle', true); }
+    }
+    o.f.obj.position.set(o.x - N / 2, o.y, o.z - N / 2);
+    o.sombra.position.set(o.x - N / 2, o.y + .02, o.z - N / 2);
+  }
+}
+
+function atualizarFiguras(dt) {
+  ilha.updateMatrixWorld(true);
+  const cam = camera;
+  cam.getWorldPosition(camMundo);
+  camLocal.copy(camMundo); ilha.worldToLocal(camLocal);
+
+  if (aguaT) { aguaT.offset.x = (aguaT.offset.x + dt * .012) % 1; aguaT.offset.y = Math.sin(performance.now() / 4000) * .03; }
+  for (const a of animadas) { a.tempo += dt; a.t.offset.x = (Math.floor(a.tempo * a.fps) % a.n) / a.n; }
+  for (const f of figurasMundo) f.olhar(camLocal);
+  for (const a of arvores) if (a.balanco > 0) { a.balanco -= dt; a.mesh.rotation.z = Math.sin(a.balanco * 40) * a.balanco * .25; }
+  for (const o of ovelhas) {
+    o.f.passo(dt);
+    // a ovelha olha para onde anda (lado em relação a quem olha)
+    if (o.dir && o.estado !== 'parada' && o.estado !== 'comendo') { const ang = o.f.obj.rotation.y, dot = o.dir[0] * Math.cos(ang) - o.dir[1] * Math.sin(ang); o.f.lado = dot < 0 ? -1 : 1; }
+    o.f.olhar(camLocal);
+  }
+  for (const n of nuvens) { n.ang += n.vel * dt; n.f.obj.position.x = Math.cos(n.ang) * n.raio; n.f.obj.position.z = Math.sin(n.ang) * n.raio; }
+  for (const p of poeiras) if (p.vivo) { p.f.passo(dt); p.f.olhar(camLocal); if (p.f.t > p.f.duracao()) { p.vivo = false; p.f.obj.visible = false; } }
+
+  if (estado === 'escolha') {
+    const pl = camLocal.clone().sub(palco.grupo.position);
+    palco.grupo.rotation.y = Math.atan2(pl.x, pl.z);
+    palco.grupo.updateMatrixWorld(true);
+    const cp = camMundo.clone(); palco.grupo.worldToLocal(cp);
+    palco.figuras.forEach((f, i) => {
+      f.passo(dt); f.olhar(cp);
+      const s = i === classeIdx; f.obj.position.y = s ? Math.abs(Math.sin(performance.now() / 260)) * .25 : 0;
+    });
+    rotulo.mesh.visible = true;
+    rotulo.mesh.position.copy(palco.grupo.position).add(new THREE.Vector3(0, 3.3, 0));
+  } else {
+    heroi.f.passo(dt); heroi.f.olhar(camLocal);
+    heroi.mostrarNome -= dt;
+    heroi.f.obj.visible = !fp();
+    rotulo.mesh.visible = heroi.mostrarNome > 0 && !fp();
+    rotulo.mesh.position.set(heroi.x - N / 2, heroi.y + 3, heroi.z - N / 2);
+  }
+  rotulo.mesh.quaternion.copy(cam.getWorldQuaternion(new THREE.Quaternion())).premultiply(ilha.getWorldQuaternion(new THREE.Quaternion()).invert());
+  dicaVR.mesh.visible = noVR && !fp();
+  if (chaoRef) chaoRef.visible = !fp();
+  avisoCamT -= dt; avisoCam.mesh.visible = fp() && avisoCamT > 0;
+  // vinheta: só em VR na 1ª pessoa, quando o herói anda ou cai
+  const mov = fp() && renderer.xr.isPresenting ? Math.max(heroi.andandoVR || 0, heroi.chao ? 0 : .8) : 0;
+  vinheta.material.opacity += (mov * .85 - vinheta.material.opacity) * Math.min(1, dt * 8);
+  vinheta.visible = vinheta.material.opacity > .01;
+  if (noVR) { dicaVR.mesh.lookAt(camMundo); }
+}
+
+function posicionarMaquete(dt, ctl) {
+  if (ctl) {
+    const zona = v => Math.abs(v) < .15 ? 0 : v;
+    ajuste.giro -= zona(ctl.giro) * 1.6 * dt;
+    if (ctl.zoom) ajuste.zoom = Math.min(2.2, Math.max(.45, ajuste.zoom * (1 - zona(ctl.sobe) * 1.2 * dt)));
+    else ajuste.altura = Math.min(1.6, Math.max(.15, ajuste.altura - zona(ctl.sobe) * .5 * dt));
+  }
+  if (fp()) { if (tecla.KeyQ) olharPC.yaw += 1.6 * dt; if (tecla.KeyE) olharPC.yaw -= 1.6 * dt; }
+  else { if (tecla.KeyQ) ajuste.giro += 1.4 * dt; if (tecla.KeyE) ajuste.giro -= 1.4 * dt; }
+  if (fp()) {           // escala real: 1 bloco = 1 metro, a ilha no chão da sala
+    raiz.position.set(0, 0, 0); raiz.rotation.y = 0; raiz.scale.setScalar(1 / BLOCO);
+  } else {
+    raiz.position.set(0, ajuste.altura, -ajuste.distancia);
+    raiz.rotation.y = ajuste.giro;
+    raiz.scale.setScalar(ajuste.zoom);
+  }
+}
+
+/* o jogador vai junto com o herói (1ª pessoa) */
+const off = new THREE.Vector3();
+function atualizarRig() {
+  if (!fp()) { rig.position.set(0, 0, 0); rig.rotation.set(0, 0, 0); ultimoOff = null; return; }
+  if (renderer.xr.isPresenting) {
+    rig.rotation.set(0, giroFP, 0);
+    // andar de verdade pela sala também move o herói (e as paredes seguram)
+    off.set(camera.position.x, 0, camera.position.z).applyAxisAngle(CIMA, giroFP);
+    if (ultimoOff) {
+      const dx = off.x - ultimoOff.x, dz = off.z - ultimoOff.z;
+      if (Math.abs(dx) + Math.abs(dz) < .5) {
+        if (!colide(heroi.x + dx, heroi.z, heroi.y, heroi.raio)) heroi.x += dx;
+        if (!colide(heroi.x, heroi.z + dz, heroi.y, heroi.raio)) heroi.z += dz;
+      }
+    }
+    ultimoOff = off.clone();
+    rig.position.set(heroi.x - N / 2 - off.x, heroi.y, heroi.z - N / 2 - off.z);
+  } else {
+    rig.position.set(0, 0, 0); rig.rotation.set(0, 0, 0);
+    camera.position.set(heroi.x - N / 2, heroi.y + 1.55, heroi.z - N / 2);
+    camera.rotation.set(olharPC.pitch, olharPC.yaw, 0, 'YXZ');
+  }
+}
+
+function atualizarCameraPC() {
+  const alvo = new THREE.Vector3(0, ajuste.altura + .05, -ajuste.distancia);
+  const r = orbita.raio;
+  camera.position.set(alvo.x + r * Math.sin(orbita.phi) * Math.sin(orbita.theta), alvo.y + r * Math.cos(orbita.phi), alvo.z + r * Math.sin(orbita.phi) * Math.cos(orbita.theta));
+  camera.lookAt(alvo);
+}
+
+const relogio = new THREE.Clock();
+function quadro() {
+  const dt = Math.min(relogio.getDelta(), 1 / 30);
+  let ctl = null, mx = 0, mz = 0;
+  if (renderer.xr.isPresenting) { ctl = lerControles(); mx = ctl.mx; mz = ctl.mz; }
+  else if (!menuAberto()) {
+    mx = (tecla.KeyD || tecla.ArrowRight ? 1 : 0) - (tecla.KeyA || tecla.ArrowLeft ? 1 : 0);
+    mz = (tecla.KeyS || tecla.ArrowDown ? 1 : 0) - (tecla.KeyW || tecla.ArrowUp ? 1 : 0);
+  }
+  posicionarMaquete(dt, ctl);
+  if (!renderer.xr.isPresenting && !fp()) atualizarCameraPC();
+  if (estado === 'jogo') moverHeroi(dt, mx, mz);
+  atualizarRig();
+  moverOvelhas(dt);
+  atualizarFiguras(dt);
+  atualizarFade(dt);
+  renderer.render(cena, camera);
+}
+
+/* ------------------------------------------------------- menu html */
+const menu = document.getElementById('menu'), hud = document.getElementById('hud');
+const menuAberto = () => !menu.classList.contains('oculto');
+function abrirMenu() { menu.classList.remove('oculto'); hud.classList.add('oculto'); }
+function fecharMenu() { menu.classList.add('oculto'); atualizarHud(); }
+function atualizarHud() {
+  if (noVR || menuAberto()) { hud.classList.add('oculto'); return; }
+  hud.classList.remove('oculto');
+  hud.innerHTML = estado === 'escolha'
+    ? '<b>Escolha o herói</b> · ← → trocar · Espaço confirmar · N outra ilha · Esc menu'
+    : `<b>${CLASSES[classeIdx].nome}</b> · ${modo === 'primeira' ? '1ª pessoa' : 'maquete'} · WASD andar · Espaço pular · J ou clique atacar · ${modo === 'primeira' ? 'arrastar olhar' : 'Q/E girar'} · V câmera · B herói · Esc menu`;
+}
+
+function montarCartas() {
+  const box = document.getElementById('classes');
+  CLASSES.forEach((c, i) => {
+    const [W, H, n, x0, y0, x1, y1] = M[c.idle];
+    const esc = 92 / Math.max(110, (y1 - y0) * 1.15);       // mesma altura visual para todos
+    const b = document.createElement('button'); b.className = 'carta'; b.type = 'button';
+    b.innerHTML = `<div class="retrato"><div class="sprite"></div></div><div class="nome">${c.nome}</div><div class="papel">${c.papel}</div>
+      <div class="barras">${[['VID', c.vida, '#d6453a'], ['FOR', c.forca, '#ffd84a'], ['VEL', c.vel, '#47aba9']].map(([t, v, cor]) =>
+        `<div class="barra"><span>${t}</span><i><b style="width:${v * 20}%;background:${cor}"></b></i></div>`).join('')}</div>`;
+    const sp = b.querySelector('.sprite'), w = W * esc, h = H * esc;
+    Object.assign(sp.style, { width: w + 'px', height: h + 'px', backgroundImage: `url(${A[c.idle]})`, backgroundSize: `${w * n}px ${h}px`,
+      marginLeft: (-((x0 + x1) / 2) * esc) + 'px', bottom: (-(H - y1) * esc + 4) + 'px' });
+    sp.style.setProperty('--n', n); sp.style.setProperty('--fim', (-w * n) + 'px'); sp.style.setProperty('--dur', (n / 9) + 's');
+    b.addEventListener('click', () => { classeIdx = i; destacar(); som('escolha'); salvar(); });
+    box.appendChild(b);
+  });
+}
+
+async function prepararVR() {
+  const btn = document.getElementById('btnVR'), aviso = document.getElementById('avisoVR');
+  let ok = false; try { ok = !!navigator.xr && await navigator.xr.isSessionSupported('immersive-vr'); } catch {}
+  if (!ok) {
+    btn.textContent = 'VR indisponível aqui'; btn.disabled = true;
+    aviso.textContent = window.isSecureContext ? 'Abra este endereço no navegador do Meta Quest para jogar em VR. Aqui dá para testar no computador.'
+      : 'O VR só funciona em endereço https:// (ou localhost). Aqui dá para testar no computador.';
+    return;
+  }
+  btn.textContent = 'Entrar em VR'; btn.disabled = false; aviso.textContent = 'Coloque o óculos e aperte o botão. Dica: em pé, a ilha fica na altura de uma mesa.';
+  btn.addEventListener('click', async () => {
+    try {
+      const s = await navigator.xr.requestSession('immersive-vr', { optionalFeatures: ['local-floor', 'bounded-floor'] });
+      s.addEventListener('end', () => { noVR = false; abrirMenu(); });
+      await renderer.xr.setSession(s);
+      noVR = true; fecharMenu(); som('ok');
+      if (estado === 'jogo') { desenharDica('Andar  ·  A: pular  ·  Gatilho: atacar  ·  B: herói  ·  Clique analóg.: câmera'); mostrarAvisoCam(); }
+      else irParaEscolha();
+    } catch (e) { aviso.textContent = 'Não consegui abrir o VR: ' + (e.message || e); }
+  });
+}
+
+/* ------------------------------------------------------- início */
+await carregarImagens();
+try { await Promise.race([document.fonts.load(`700 54px 'Pixelify Sans'`), new Promise(r => setTimeout(r, 2500))]); } catch {}
+montarCeu(); materiaisBloco(); montarPalco(); criarHeroi(); montarMaos();
+construirIlha(); irParaEscolha();
+montarCartas(); destacar(); prepararVR();
+document.getElementById('btnPC').addEventListener('click', () => { fecharMenu(); som('escolha'); canvas.focus?.(); });
+document.getElementById('btnIlha').addEventListener('click', () => { novaIlha(); });
+document.querySelectorAll('#cameras .opc').forEach(b => b.addEventListener('click', () => alternarCamera(b.dataset.modo)));
+marcarCamera();
+document.getElementById('carregando').remove();
+abrirMenu();
+renderer.setAnimationLoop(quadro);
+window.__jogo = { alternarCamera, olharPC, get modo() { return modo; }, simular(seg, mx = 0, mz = 0, pula = false) { if (pula) pular(); for (let t = 0; t < seg; t += 1 / 60) moverHeroi(1 / 60, mx, mz); }, mundo: () => mundo, escolher, confirmar, pular, atacar, novaIlha, heroi, ajuste, orbita, get estado() { return estado; }, fecharMenu };
+</script>
+</body>
+</html>
